@@ -3,8 +3,6 @@ import csv
 import math
 import operator
 import time
-data = []
-
 def nominalToNumeric(data):
     dic={}
     k=1
@@ -13,26 +11,21 @@ def nominalToNumeric(data):
             if val not in dic:
                 dic[val]=k
                 k=k+1
-
     for i in range(len(data)):
         for j in range(len(data[i])):
             data[i][j]=dic.get(data[i][j])
-    myfile = open('car1.csv','w')
-    with myfile:
-        writer=csv.writer(myfile)
-        writer.writerows(data)
-
-    print("hello")
-    #print(data)
+    print(data)
     print(dic)
 
 def loadCsv(filename):
+    data = []
     with open(filename) as csvDataFile:
         csvReader = csv.reader(csvDataFile)
         for row in csvReader:
             data.append(row)
     nominalToNumeric(data)
     return data
+
 def splitData(dataset, splitRatio):
     random.shuffle(dataset)
     trainSet = dataset[:(int)(len(dataset) * splitRatio)]
@@ -49,15 +42,15 @@ def euclideanDistance(one,two,length):
     return ((distance))
 
 def getResponse(neighbors):
-	classVotes = {}
-	for x in range(len(neighbors)):
-		response = neighbors[x][-1]
-		if response in classVotes:
-			classVotes[response] += 1
-		else:
-			classVotes[response] = 1
-	sortedVotes = sorted(classVotes.items(), key=operator.itemgetter(1), reverse=True)
-	return sortedVotes[0][0]
+    classVotes = {}
+    for x in range(len(neighbors)):
+        response = neighbors[x][-1]
+        if response in classVotes:
+            classVotes[response] += 1
+        else:
+            classVotes[response] = 1
+    sortedVotes = sorted(classVotes.items(), key=operator.itemgetter(1), reverse=True)
+    return sortedVotes[0][0]
 
 def nearNeighbors(trainingData,testData,k):
     distances=[]
@@ -81,22 +74,37 @@ def nearNeighbors(trainingData,testData,k):
 
 
 def getAccuracy(testSet, predictions):
-	correct = 0
-	for x in range(len(testSet)):
-		if testSet[x][-1] == predictions[x]:
-			correct += 1
-	return (correct/float(len(testSet))) * 100.0
-def getErrorRate(testSet, predictions):
-	correct = 0
-	for x in range(len(testSet)):
-		if testSet[x][-1] == predictions[x]:
-			correct += 1
-	return 1.0 - (correct/float(len(testSet)))
+    correct = 0
+    for x in range(len(testSet)):
+        if testSet[x][-1] == predictions[x]:
+            correct += 1
+    return (correct/float(len(testSet))) * 100.0
 
+def getErrorRate(testSet, predictions):
+    correct = 0
+    for x in range(len(testSet)):
+        if testSet[x][-1] == predictions[x]:
+            correct += 1
+    return 1.0 - (correct/float(len(testSet)))
+
+
+def classify(testSet, predictions):
+    matrix = {}
+    for x in range(len(testSet)):
+        #print("Element " + str(testSet[x][-1]))
+        if testSet[x][-1] == predictions[x]:
+            if testSet[x][-1] not in matrix:
+                matrix[testSet[x][-1]] = 1
+            else:
+                matrix[testSet[x][-1]] = matrix.get(testSet[x][-1]) + 1 
+        
+    return matrix
 
 def iterartion(k,dataset,splitRatio):
 
     trainingData,testData=splitData(dataset,splitRatio)
+    print(len(trainingData))
+    print(type(testData))
     prediction=[]
 
     for x in range(len(testData)):
@@ -113,22 +121,24 @@ def iterartion(k,dataset,splitRatio):
 def main():
     filename = 'car1.csv'
     splitRatio = float(2/3)
-
     dataset = loadCsv(filename)
-
-    print("enter the no of K")
-    k=int(input())
-    er=0
-    start_time = time.time()
-    for i in range(1):
-        er+=iterartion(k,dataset,splitRatio)
-    print("the total erate"+str(er/1))
-    print((time.time()-start_time))
-
-
-
-
-
-
+    sum = 0.0
+    runs=2
+    k = int(input("Enter the value of K: "))
+    for run in range(0,runs):
+        prediction=[]
+        trainingData,testData=splitData(dataset,splitRatio)
+        print("Train set " + str(len(trainingData)))
+        print("Test set " + str(len(testData)) )
+        for x in range(len(testData)):
+            #print("Entry....")
+            neighbors=nearNeighbors(trainingData,testData[x],k)
+            results=getResponse(neighbors)
+            prediction.append(results)
+        erate=getErrorRate(testData, prediction)
+        print(erate)
+        sum = sum + erate
+        print(classify(testData, prediction))
+    print("Total error percentage is " + str((sum/runs)*100))
 
 main()
